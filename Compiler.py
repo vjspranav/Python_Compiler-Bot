@@ -5,7 +5,7 @@ Created on Sat Mar 28 03:14:42 2020
 @author: vjspranav
 """
 import logging
-
+import os
 import telegram
 import subprocess
 from telegram.ext import Updater
@@ -110,16 +110,23 @@ def get_inp_cpp(update, context):
 
 def ipy(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="Welcome to Python interpretter, please enter exit() to stop.")
+    f=open("R:/temp.txt","w")
+    f.close()
     return GET_IPY
     
 def get_ipy(update, context):
     py_code = update.message.text
     if 'exit()' in py_code:
         context.bot.send_message(chat_id=update.effective_chat.id, text="Thank you for using.")       
+        os.remove('R:/temp.txt')
+        os.remove("R:/test.py")
         return ConversationHandler.END
     
     f=open("R:/test.py","a+")
     f.write(py_code+'\n')
+    f.close()
+    f=open("R:/temp.txt","r")
+    lenf=len(f.read())
     f.close()
     subprocess.call("python R:/test.py > R:/temp.txt", shell="True")
     y=''
@@ -127,7 +134,7 @@ def get_ipy(update, context):
     for i in f.readlines():
         y = y + str(i)
     f.close()
-    context.bot.send_message(chat_id=update.effective_chat.id, text=y)
+    context.bot.send_message(chat_id=update.effective_chat.id, text=y[lenf:])
     return GET_IPY
     
 def done():
