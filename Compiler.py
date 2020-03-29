@@ -8,7 +8,10 @@ import logging
 
 import telegram
 import subprocess
-from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters
+from telegram.ext import Updater
+from telegram.ext import CommandHandler, ConversationHandler
+from telegram.ext import MessageHandler, Filters
+
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -16,7 +19,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
-GET_CODE_C, GET_INP_C, GET_CODE_CPP, GET_INP_CPP = range(4)
+GET_CODE_C, GET_INP_C, GET_CODE_CPP, GET_INP_CPP, GET_IPY = range(5)
 
 TOKEN='Your Token Here'
 bot = telegram.Bot(token=TOKEN)
@@ -39,7 +42,7 @@ def c2(update, context):
 def get_code_c(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="entered this function ")
     c_code = update.message.text
-    f=open("test.c","w+")
+    f=open("R:/test.c","w+")
     f.write(c_code)
     f.close()
     context.bot.send_message(chat_id=update.effective_chat.id, text="Please enter inputs(if any) or send 0 ")
@@ -47,24 +50,24 @@ def get_code_c(update, context):
     
 def get_inp_c(update, context):
     inp = update.message.text
-    f=open("input.txt","w+")
+    f=open("R:/input.txt","w+")
     f.write(inp)
     f.close()    
-    if(subprocess.call("gcc test.c -o test.exe", shell="True") ==0 ):
-        subprocess.call("test.exe < input.txt > temp.txt", shell="True")
+    if(subprocess.call("gcc R:/test.c -o R:/test.exe", shell="True") ==0 ):
+        subprocess.call("R:/test.exe < R:/input.txt > R:/temp.txt", shell="True")
         y=''
-        f=open("temp.txt","r")
+        f=open("R:/temp.txt","r")
         for i in f.readlines():
             y = y + str(i)
         f.close()
         context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     else:
-        process = subprocess.Popen(['gcc', "test.c", '-o', 'test.exe'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        process = subprocess.Popen(['gcc', "R:/test.c", '-o', 'R:/test.exe'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         (x, _) = process.communicate()
         x = x.decode("utf-8")
         y = "There were some errors\n"
         y = y + x
-        y = y.replace("test.c", "Code")
+        y = y.replace("R:/test.c", "Code")
         context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     return ConversationHandler.END
     
@@ -76,7 +79,7 @@ def cpp(update, context):
 def get_code_cpp(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="entered this function ")
     cpp_code = update.message.text
-    f=open("test.cpp","w+")
+    f=open("R:/test.cpp","w+")
     f.write(cpp_code)
     f.close()
     context.bot.send_message(chat_id=update.effective_chat.id, text="Please enter inputs(if any) or send 0 ")
@@ -84,51 +87,75 @@ def get_code_cpp(update, context):
     
 def get_inp_cpp(update, context):
     inp = update.message.text
-    f=open("input.txt","w+")
+    f=open("R:/input.txt","w+")
     f.write(inp)
     f.close()    
-    if(subprocess.call("g++ test.cpp -o test.exe", shell="True") ==0 ):
-        subprocess.call("test.exe < input.txt > temp.txt", shell="True")
+    if(subprocess.call("g++ R:/test.cpp -o R:/test.exe", shell="True") ==0 ):
+        subprocess.call("R:/test.exe < R:/input.txt > R:/temp.txt", shell="True")
         y=''
-        f=open("temp.txt","r")
+        f=open("R:/temp.txt","r")
         for i in f.readlines():
             y = y + str(i)
         f.close()
         context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     else:
-        process = subprocess.Popen(['g++', "test.cpp", '-o', 'test.exe'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        process = subprocess.Popen(['g++', "R:/test.cpp", '-o', 'R:/test.exe'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         (x, _) = process.communicate()
         x = x.decode("utf-8")
         y = "There were some errors\n"
         y = y + x
-        y = y.replace("test.cpp", "Code")
+        y = y.replace("R:/test.cpp", "Code")
         context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     return ConversationHandler.END
+
+def ipy(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Welcome to Python interpretter, please enter exit() to stop.")
+    return GET_IPY
+    
+def get_ipy(update, context):
+    py_code = update.message.text
+    if 'exit()' in py_code:
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Thank you for using.")       
+        return ConversationHandler.END
+    
+    f=open("R:/test.py","a+")
+    f.write(py_code+'\n')
+    f.close()
+    subprocess.call("python R:/test.py > R:/temp.txt", shell="True")
+    y=''
+    f=open("R:/temp.txt","r")
+    for i in f.readlines():
+        y = y + str(i)
+    f.close()
+    context.bot.send_message(chat_id=update.effective_chat.id, text=y)
+    return GET_IPY
     
 def done():
     pass    
 
+def error(update, context):
+    """Log Errors caused by Updates."""
+    logger.warning('Update "%s" caused error "%s"', update, context.error)
 
-conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('c', c2), CommandHandler('cpp', cpp)],
-
-        states={
-            GET_CODE_C: [MessageHandler(Filters.text, get_code_c)],
-            GET_INP_C: [MessageHandler(Filters.text, get_inp_c)],    
-            GET_CODE_CPP: [MessageHandler(Filters.text, get_code_cpp)],
-            GET_INP_CPP: [MessageHandler(Filters.text, get_inp_cpp)],    
-        },
-
-        fallbacks=[MessageHandler(Filters.regex('^Done$'), done)]
-    )
-
-def unknown(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I didn't understand that command.")
-
-
-unknown_handler = MessageHandler(Filters.command, unknown)
-dispatcher.add_handler(unknown_handler)
-
-dispatcher.add_handler(conv_handler)
-updater.start_polling()
-updater.idle()
+def main():
+    conv_handler = ConversationHandler(
+            entry_points=[CommandHandler('c', c2), CommandHandler('cpp', cpp), CommandHandler('ipy', ipy)],
+    
+            states={
+                GET_CODE_C: [MessageHandler(Filters.text, get_code_c)],
+                GET_INP_C: [MessageHandler(Filters.text, get_inp_c)],    
+                GET_CODE_CPP: [MessageHandler(Filters.text, get_code_cpp)],
+                GET_INP_CPP: [MessageHandler(Filters.text, get_inp_cpp)],    
+                GET_IPY:  [MessageHandler(Filters.text, get_ipy)],    
+            },
+    
+            fallbacks=[MessageHandler(Filters.regex('^Done$'), done)]
+        )
+    
+    dispatcher.add_handler(conv_handler)
+    dispatcher.add_error_handler(error)
+    updater.start_polling()
+    updater.idle()
+    
+if __name__ == '__main__':
+    main()
