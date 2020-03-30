@@ -42,35 +42,35 @@ def c2(update, context):
 def get_code_c(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="entered this function ")
     c_code = update.message.text
-    f=open("R:/test.c","w+")
+    f=open("test.c","w+")
     f.write(c_code)
     f.close()
     context.bot.send_message(chat_id=update.effective_chat.id, text="Please enter inputs(if any) or send 0 ")
-    return GET_INP_C    
-    
+    return GET_INP_C
+
 def get_inp_c(update, context):
     inp = update.message.text
-    f=open("R:/input.txt","w+")
+    f=open("input.txt","w+")
     f.write(inp)
-    f.close()    
-    if(subprocess.call("gcc R:/test.c -o R:/test.exe", shell="True") ==0 ):
-        subprocess.call("R:/test.exe < R:/input.txt > R:/temp.txt", shell="True")
+    f.close()
+    if(subprocess.call("gcc test.c -o test", shell="True") ==0 ):
+        subprocess.call("./test < input.txt > temp.txt", shell="True")
         y=''
-        f=open("R:/temp.txt","r")
+        f=open("temp.txt","r")
         for i in f.readlines():
             y = y + str(i)
         f.close()
         context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     else:
-        process = subprocess.Popen(['gcc', "R:/test.c", '-o', 'R:/test.exe'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        process = subprocess.Popen(['gcc', "test.c", '-o', 'test.exe'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         (x, _) = process.communicate()
         x = x.decode("utf-8")
         y = "There were some errors\n"
         y = y + x
-        y = y.replace("R:/test.c", "Code")
+        y = y.replace("test.c", "Code")
         context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     return ConversationHandler.END
-    
+
 def cpp(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="OK give me some c++ code to execute")
     return GET_CODE_CPP
@@ -79,66 +79,66 @@ def cpp(update, context):
 def get_code_cpp(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="entered this function ")
     cpp_code = update.message.text
-    f=open("R:/test.cpp","w+")
+    f=open("test.cpp","w+")
     f.write(cpp_code)
     f.close()
     context.bot.send_message(chat_id=update.effective_chat.id, text="Please enter inputs(if any) or send 0 ")
-    return GET_INP_CPP    
-    
+    return GET_INP_CPP
+
 def get_inp_cpp(update, context):
     inp = update.message.text
-    f=open("R:/input.txt","w+")
+    f=open("input.txt","w+")
     f.write(inp)
-    f.close()    
-    if(subprocess.call("g++ R:/test.cpp -o R:/test.exe", shell="True") ==0 ):
-        subprocess.call("R:/test.exe < R:/input.txt > R:/temp.txt", shell="True")
+    f.close()
+    if(subprocess.call("g++ test.cpp -o test", shell="True") ==0 ):
+        subprocess.call("./test < input.txt > temp.txt", shell="True")
         y=''
-        f=open("R:/temp.txt","r")
+        f=open("temp.txt","r")
         for i in f.readlines():
             y = y + str(i)
         f.close()
         context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     else:
-        process = subprocess.Popen(['g++', "R:/test.cpp", '-o', 'R:/test.exe'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        process = subprocess.Popen(['g++', "test.cpp", '-o', 'test'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         (x, _) = process.communicate()
         x = x.decode("utf-8")
         y = "There were some errors\n"
         y = y + x
-        y = y.replace("R:/test.cpp", "Code")
+        y = y.replace("test.cpp", "Code")
         context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     return ConversationHandler.END
 
 def ipy(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Welcome to Python interpretter, please enter exit() to stop.")
-    f=open("R:/temp.txt","w")
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Welcome to Python interpretter, please enter exit() to stop\nAs of now Inputs are not supported and at anypoint if it feels unresponsive due to any unresponsive code please exit and restart.")
+    f=open("temp.txt","w")
     f.close()
     return GET_IPY
-    
+
 def get_ipy(update, context):
     py_code = update.message.text
     if 'exit()' in py_code:
-        context.bot.send_message(chat_id=update.effective_chat.id, text="Thank you for using.")       
-        os.remove('R:/temp.txt')
-        os.remove("R:/test.py")
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Thank you for using.")
+        os.remove('temp.txt')
+        os.remove("test.py")
         return ConversationHandler.END
-    
-    f=open("R:/test.py","a+")
+
+    f=open("test.py","a+")
     f.write(py_code+'\n')
     f.close()
-    f=open("R:/temp.txt","r")
+    f=open("temp.txt","r")
     lenf=len(f.read())
     f.close()
-    subprocess.call("python R:/test.py > R:/temp.txt", shell="True")
+    subprocess.call("python3 test.py > temp.txt", shell="True")
     y=''
-    f=open("R:/temp.txt","r")
+    f=open("temp.txt","r")
     for i in f.readlines():
         y = y + str(i)
     f.close()
     context.bot.send_message(chat_id=update.effective_chat.id, text=y[lenf:])
     return GET_IPY
-    
+
 def done():
-    pass    
+    pass
 
 def error(update, context):
     """Log Errors caused by Updates."""
