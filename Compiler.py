@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 GET_CODE_C, GET_INP_C, GET_CODE_CPP, GET_INP_CPP, GET_IPY = range(5)
 
-TOKEN='Your Token Here'
+TOKEN=os.environ['TOKEN']
 bot = telegram.Bot(token=TOKEN)
 print(bot.get_me())
 updater = Updater(token=TOKEN, use_context=True)
