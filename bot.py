@@ -19,7 +19,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
-GET_CODE_C, GET_INP_C, GET_CODE_CPP, GET_INP_CPP, GET_IPY = range(5)
+GET_CODE_C, GET_INP_C, GET_CODE_CPP, GET_INP_CPP, GET_IPY, GET_CODE_PY, GET_INP_PY = range(7)
 
 TOKEN=os.environ['TOKEN']
 bot = telegram.Bot(token=TOKEN)
@@ -34,7 +34,7 @@ updater.bot.set_webhook("https://{}.herokuapp.com/{}".format(HEROKU_APP_NAME, TO
 dispatcher = updater.dispatcher
 
 def start(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, I'll help you compile all your codes trust me!")
+    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, I'll help you compile all your codes trust me!\n/c - For C\n/cpp - For C++\n/ipy - For Interpretter\n/py - For Python")
 
 start_handler = CommandHandler('start', start)
 dispatcher.add_handler(start_handler)
@@ -46,7 +46,6 @@ def c2(update, context):
 
 
 def get_code_c(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="entered this function ")
     c_code = update.message.text
     f=open("test.c","w+")
     f.write(c_code)
@@ -66,7 +65,8 @@ def get_inp_c(update, context):
         for i in f.readlines():
             y = y + str(i)
         f.close()
-        context.bot.send_message(chat_id=update.effective_chat.id, text=y)
+        if y:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     else:
         process = subprocess.Popen(['gcc', "test.c", '-o', 'test.exe'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         (x, _) = process.communicate()
@@ -74,7 +74,8 @@ def get_inp_c(update, context):
         y = "There were some errors\n"
         y = y + x
         y = y.replace("test.c", "Code")
-        context.bot.send_message(chat_id=update.effective_chat.id, text=y)
+        if y:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     return ConversationHandler.END
 
 def cpp(update, context):
@@ -83,7 +84,6 @@ def cpp(update, context):
 
 
 def get_code_cpp(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="entered this function ")
     cpp_code = update.message.text
     f=open("test.cpp","w+")
     f.write(cpp_code)
@@ -103,7 +103,8 @@ def get_inp_cpp(update, context):
         for i in f.readlines():
             y = y + str(i)
         f.close()
-        context.bot.send_message(chat_id=update.effective_chat.id, text=y)
+        if y:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     else:
         process = subprocess.Popen(['g++', "test.cpp", '-o', 'test'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         (x, _) = process.communicate()
@@ -111,11 +112,12 @@ def get_inp_cpp(update, context):
         y = "There were some errors\n"
         y = y + x
         y = y.replace("test.cpp", "Code")
-        context.bot.send_message(chat_id=update.effective_chat.id, text=y)
+        if y:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     return ConversationHandler.END
 
 def ipy(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Welcome to Python interpretter, please enter exit() to stop\nAs of now Inputs are not supported and at anypoint if it feels unresponsive due to any unresponsive code please exit and restart.")
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Welcome to Python interpretter, please enter exit() to stop\nAs of now Inputs are not supported do exit() and use /py for input supported code and at any point if it feels unresponsive due to any unresponsive code please exit and restart.")
     f=open("temp.txt","w")
     f.close()
     return GET_IPY
@@ -140,8 +142,46 @@ def get_ipy(update, context):
     for i in f.readlines():
         y = y + str(i)
     f.close()
-    context.bot.send_message(chat_id=update.effective_chat.id, text=y[lenf:])
+    if y:
+        context.bot.send_message(chat_id=update.effective_chat.id, text=y[lenf:])
     return GET_IPY
+
+def py(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="OK give me some python code to execute")
+    return GET_CODE_PY
+
+
+def get_code_py(update, context):
+    py_code = update.message.text
+    f=open("test.py","w+")
+    f.write(py_code)
+    f.close()
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Please enter inputs(if any) or send 0 ")
+    return GET_INP_PY    
+    
+def get_inp_py(update, context):
+    inp = update.message.text
+    f=open("input.txt","w+")
+    f.write(inp)
+    f.close()    
+    if(subprocess.call("python test.py < input.txt > temp.txt", shell="True") ==0 ):
+        y=''
+        f=open("temp.txt","r")
+        for i in f.readlines():
+            y = y + str(i)
+        f.close()
+        if y:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=y)
+    else:
+        process = subprocess.Popen(['python', 'test.py', ' < input.txt > temp.txt'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        (x, _) = process.communicate()
+        x = x.decode("utf-8")
+        y = "There were some errors\n"
+        y = y + x
+        y = y.replace("test.py", "Code")
+        if y:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=y)
+    return ConversationHandler.END
 
 def done():
     pass
@@ -152,7 +192,7 @@ def error(update, context):
 
 def main():
     conv_handler = ConversationHandler(
-            entry_points=[CommandHandler('c', c2), CommandHandler('cpp', cpp), CommandHandler('ipy', ipy)],
+            entry_points=[CommandHandler('c', c2), CommandHandler('cpp', cpp), CommandHandler('ipy', ipy), CommandHandler('py', py)],
     
             states={
                 GET_CODE_C: [MessageHandler(Filters.text, get_code_c)],
@@ -160,6 +200,8 @@ def main():
                 GET_CODE_CPP: [MessageHandler(Filters.text, get_code_cpp)],
                 GET_INP_CPP: [MessageHandler(Filters.text, get_inp_cpp)],    
                 GET_IPY:  [MessageHandler(Filters.text, get_ipy)],    
+                GET_CODE_PY: [MessageHandler(Filters.text, get_code_py)],
+                GET_INP_PY: [MessageHandler(Filters.text, get_inp_py)],
             },
     
             fallbacks=[MessageHandler(Filters.regex('^Done$'), done)]
