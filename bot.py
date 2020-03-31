@@ -173,7 +173,7 @@ def get_inp_py(update, context):
         if y:
             context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     else:
-        process = subprocess.Popen(['python', 'test.py', ' < input.txt > temp.txt'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        process = subprocess.Popen(['python', 'test.py', ' < input.txt > temp.txt'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         (x, _) = process.communicate()
         x = x.decode("utf-8")
         y = "There were some errors\n"
