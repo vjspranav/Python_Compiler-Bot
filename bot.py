@@ -19,7 +19,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
-GET_CODE_C, GET_INP_C, GET_CODE_CPP, GET_INP_CPP, GET_IPY, GET_CODE_PY, GET_INP_PY = range(7)
+GET_CODE_C, GET_INP_C, GET_CODE_CPP, GET_INP_CPP, GET_IPY, GET_CODE_PY, GET_INP_PY, GET_CODE_JAVA, GET_INP_JAVA, GET_DEN = range(10)
 
 TOKEN=os.environ['TOKEN']
 bot = telegram.Bot(token=TOKEN)
@@ -34,7 +34,7 @@ updater.bot.set_webhook("https://{}.herokuapp.com/{}".format(HEROKU_APP_NAME, TO
 dispatcher = updater.dispatcher
 
 def start(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, I'll help you compile all your codes trust me!\n/c - For C\n/cpp - For C++\n/ipy - For Interpretter\n/py - For Python")
+    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, I'll help you compile all your codes trust me!\PS: I take care of sepolicy denials too\n/c - For C\n/cpp - For C++\n/ipy - For Interpretter\n/py - For Python\n/denial - For Denials")
 
 start_handler = CommandHandler('start', start)
 dispatcher.add_handler(start_handler)
@@ -173,13 +173,120 @@ def get_inp_py(update, context):
         if y:
             context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     else:
-        process = subprocess.Popen(['python', 'test.py', ' < input.txt > temp.txt'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        process = subprocess.Popen('python test.py < input.txt > temp.txt', stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         (x, _) = process.communicate()
         x = x.decode("utf-8")
         y = "There were some errors\n"
         y = y + x
         y = y.replace("test.py", "Code")
         if y:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=y)
+    return ConversationHandler.END
+
+def java(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="The Java part is still under work")
+    return GET_CODE_JAVA
+
+def get_code_java(update, context):
+    java_code = update.message.text
+    f=open("Test.java","w+")
+    f.write(c_code)
+    f.close()
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Please enter inputs(if any) or send 0 ")
+    return GET_INP_JAVA
+
+def get_inp_java(update, context):
+    inp = update.message.text
+    f=open("input.txt","w+")
+    f.write(inp)
+    f.close()
+#    if(subprocess.call("javac test.java", shell="True") ==0 ):
+    subprocess.call("javac Test.java", shell="True")
+    subprocess.call("java Test > temp.txt", shell="True")
+    y=''
+    f=open("temp.txt","r")
+    for i in f.readlines():
+        y = y + str(i)
+        f.close()
+        if y:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=y)
+#    else:
+#        process = subprocess.Popen(['gcc', "test.c", '-o', 'test.exe'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+#        (x, _) = process.communicate()
+#        x = x.decode("utf-8")
+#        y = "There were some errors\n"
+#        y = y + x
+#        y = y.replace("test.c", "Code")
+#        if y:
+#            context.bot.send_message(chat_id=update.effective_chat.id, text=y)
+    return ConversationHandler.END
+
+def denial(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Please send a denials ")
+    return GET_DEN
+    
+def get_den(update, context):
+    res = []
+    lines = []
+    try:
+        user_command=update.message.text
+    except AttributeError:
+        user_command=None
+        pass
+
+    if not user_command:
+        try:
+            newfile=update.message.document
+            bot.send_message(chat_id=update.effective_chat.id, text="Downloading file %s (%i bytes)" %(newfile.file_name, newfile.file_size))
+            newFile = bot.getFile(newfile.file_id)
+            link=open(newFile.download(newfile.file_name))
+            link = link.readlines()
+            for i in link:
+                if 'avc:' in i:
+                    lines.append(i)
+        except AttributeError:
+            pass
+    else:
+        for i in user_command.split('\n'):
+            if 'avc:' in i:
+                lines.append(i)
+
+    y = ''
+    c=0
+    
+    for a in lines:
+        perm = [x for x in a.split(" ")]
+        for i in range(len(perm)):
+            if(perm[i] == '{'):
+                per = perm[i+1]
+            if('scontext=' in perm[i]):
+                scon = (perm[i].split('u:r:')[1]).split(':s0')[0]
+            if('tcontext=' and 'u:object_r:' in perm[i]):
+                tcon = perm[i].split('u:object_r:')[1].split(':s0')[0]
+            if('tcontext=' and 'u:r:' in perm[i]):
+                tcon = perm[i].split('u:r:')[1].split(':s0')[0]
+            if('tclass=' in perm[i]):
+                tcl = perm[i].split('tclass=')[1]
+        b = "allow " + scon + " " + tcon + ":" + tcl + " { " + per + " };"
+        if b not in res: #Checking if denial resolution already exists or not
+            res.append(b) #Adds the resolution to list
+    res.sort()    
+    #Adding multiple permissions to same line
+    for i in range(1,len(res)):
+        c=i
+        while(res[c].split(' ')[2]==res[i-1].split(' ')[2] and res[c].split(' ')[1]==res[i-1].split(' ')[1]):
+            res[i-1] = res[i-1][:-2] + ' ' + res[c].split(' ')[4] + ' ' + res[0][-2:]
+            res[c]='0 0 0 0 0'
+            c += 1
+            if(c==len(res)):
+                break
+        i=c
+    
+    res = [i for i in res if '0 0 0 0' not in i]
+    for i in res:
+        y = y+ "in " + i.split(' ')[1]+".te\n"+i+"\n\n"
+    
+    if y:
             context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     return ConversationHandler.END
 
@@ -192,25 +299,28 @@ def error(update, context):
 
 def main():
     conv_handler = ConversationHandler(
-            entry_points=[CommandHandler('c', c2), CommandHandler('cpp', cpp), CommandHandler('ipy', ipy), CommandHandler('py', py)],
-    
+            entry_points=[CommandHandler('c', c2), CommandHandler('cpp', cpp), CommandHandler('ipy', ipy), CommandHandler('py', py), CommandHandler('java', java), CommandHandler('denial', denial)],
+
             states={
                 GET_CODE_C: [MessageHandler(Filters.text, get_code_c)],
-                GET_INP_C: [MessageHandler(Filters.text, get_inp_c)],    
+                GET_INP_C: [MessageHandler(Filters.text, get_inp_c)],
                 GET_CODE_CPP: [MessageHandler(Filters.text, get_code_cpp)],
-                GET_INP_CPP: [MessageHandler(Filters.text, get_inp_cpp)],    
-                GET_IPY:  [MessageHandler(Filters.text, get_ipy)],    
+                GET_INP_CPP: [MessageHandler(Filters.text, get_inp_cpp)],
+                GET_IPY:  [MessageHandler(Filters.text, get_ipy)],
                 GET_CODE_PY: [MessageHandler(Filters.text, get_code_py)],
                 GET_INP_PY: [MessageHandler(Filters.text, get_inp_py)],
+                GET_CODE_JAVA: [MessageHandler(Filters.text, get_inp_java)],
+                GET_INP_JAVA: [MessageHandler(Filters.text, get_inp_java)],
+                GET_DEN: [MessageHandler(Filters.text | Filters.document, get_den)],
             },
-    
+
             fallbacks=[MessageHandler(Filters.regex('^Done$'), done)]
         )
-    
+
     dispatcher.add_handler(conv_handler)
     dispatcher.add_error_handler(error)
     updater.start_polling()
     updater.idle()
-    
+
 if __name__ == '__main__':
     main()
