@@ -1,0 +1,3 @@
+#!/bin/bash
+sudo heroku container:push --app sit-compiler-bot web && sudo heroku container:release --app sit-compiler-bot web && heroku logs --tail --app sit-compiler-bot
+

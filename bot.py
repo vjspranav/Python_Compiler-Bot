@@ -222,7 +222,7 @@ def get_inp_java(update, context):
     return ConversationHandler.END
 
 def denial(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Please send a denials ")
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Please send a log(either file or the denials or the denial line): ")
     return GET_DEN
     
 def get_den(update, context):
@@ -282,10 +282,11 @@ def get_den(update, context):
                 break
         i=c
     
-    res = [i for i in res if '0 0 0 0' not in i]
+    res = [ i for i in res if '0 0 0 0' not in i]
     for i in res:
         y = y+ "in " + i.split(' ')[1]+".te\n"+i+"\n\n"
-    
+        print(y)
+
     if y:
             context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     return ConversationHandler.END
