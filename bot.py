@@ -8,6 +8,7 @@ import logging
 import os
 import telegram
 import subprocess
+from telegram import constants
 from telegram.ext import Updater
 from telegram.ext import CommandHandler, ConversationHandler
 from telegram.ext import MessageHandler, Filters
@@ -289,8 +290,13 @@ def get_den(update, context):
         y = y+ "in " + i.split(' ')[1]+".te\n"+i+"\n\n"
         print(y)
 
-    if y:
-            context.bot.send_message(chat_id=update.effective_chat.id, text=y)
+    if len(y) < constants.MAX_MESSAGE_LENGTH:
+        context.bot.send_message(chat_id=update.effective_chat.id, text=y)
+    else:
+        chunks, chunk_size = len(y), constants.MAX_MESSAGE_LENGTH
+        tlist=[ y[i:i+chunk_size] for i in range(0, chunks, chunk_size) ]
+        for d in tlist:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=d)
     return ConversationHandler.END
 
 def done():
