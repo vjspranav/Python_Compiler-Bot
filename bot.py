@@ -290,6 +290,10 @@ def get_den(update, context):
         y = y+ "in " + i.split(' ')[1]+".te\n"+i+"\n\n"
         print(y)
 
+    if not y:
+        context.bot.send_message(chat_id=update.effective_chat.id, text="No Denials Found in Log")
+        return ConversationHandler.END
+
     if len(y) < constants.MAX_MESSAGE_LENGTH:
         context.bot.send_message(chat_id=update.effective_chat.id, text=y)
     else:
